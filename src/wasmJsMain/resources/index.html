@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kotlin/Wasm Demo</title>
+</head>
+<body>
+<h1>Kotlin/Wasm Add Numbers</h1>
+<input id="num1" type="number" placeholder="First number" />
+<input id="num2" type="number" placeholder="Second number" />
+<button id="addBtn">Add</button>
+<p id="result"></p>
+
+<hr>
+
+<h1>Prime Sum Performance Test</h1>
+<input id="primeCount" type="number" placeholder="Count primes" value="1000000" />
+<button id="runJsBtn">Run in JS</button>
+<button id="runWasmBtn">Run in Kotlin/Wasm</button>
+<p id="primeResult"></p>
+
+<script type="application/javascript" src="kotlin-wasm-demo.js"></script>
+<script>
+    function isPrime(n) {
+        if (n < 2) return false;
+        for (let i = 2; i * i <= n; i++) {
+            if (n % i === 0) return false;
+        }
+        return true;
+    }
+
+    function sumFirstNPrimes_JS(n) {
+        let count = 0;
+        let num = 2;
+        let sum = 0;
+        while (count < n) {
+            if (isPrime(num)) {
+                sum += num;
+                count++;
+            }
+            num++;
+        }
+        return sum;
+    }
+
+    async function main() {
+        const wasmModule = await window["kotlin-wasm-demo"];
+        wasmModule._initialize();
+
+        document.getElementById("addBtn").onclick = () => {
+            const a = parseInt(document.getElementById("num1").value);
+            const b = parseInt(document.getElementById("num2").value);
+            document.getElementById("result").innerText =
+                "Result: " + wasmModule.addNumbers(a, b);
+        };
+
+        document.getElementById("runJsBtn").onclick = () => {
+            const count = parseInt(document.getElementById("primeCount").value);
+            const t1 = performance.now();
+            const sum = sumFirstNPrimes_JS(count);
+            const t2 = performance.now();
+            document.getElementById("primeResult").innerText =
+                `JS: Sum=${sum}, Time=${(t2 - t1).toFixed(2)} ms`;
+        };
+
+        document.getElementById("runWasmBtn").onclick = () => {
+            const count = parseInt(document.getElementById("primeCount").value);
+            const t1 = performance.now();
+            const sum = wasmModule.sumFirstNPrimes(count);
+            const t2 = performance.now();
+            document.getElementById("primeResult").innerText =
+                `Wasm: Sum=${sum}, Time=${(t2 - t1).toFixed(2)} ms`;
+        };
+    }
+
+    main();
+</script>
+</body>
+</html>
